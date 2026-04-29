@@ -21,10 +21,10 @@ async def prerequisite_gate(input, tool_use_id, context):
     tool_name = input["tool_name"]
 
     # If process_refund is about to run but get_customer hasn't been called yet — block it.
-    if tool_name == "process_refund" and "get_customer" not in called_tools:
+    if tool_name == "mcp__server__process_refund" and "mcp__server__get_customer" not in called_tools:
         return {
             "decision": "block",
-            "reason": "You must call get_customer first to verify the customer before processing a refund.",
+            "reason": "You must call mcp__server__get_customer first to verify the customer before processing a refund.",
         }
 
     # Otherwise, record that this tool ran and allow it.
@@ -34,7 +34,7 @@ async def prerequisite_gate(input, tool_use_id, context):
 
 async def exceed_limit(input, tool_use_id, context):
     tool_name = input["tool_name"]
-    if tool_name == "process_refund":
+    if tool_name == "mcp__server__process_refund":
         amount = input["tool_input"]["amount"]
         if amount > 500:
             return {
@@ -47,15 +47,16 @@ async def exceed_limit(input, tool_use_id, context):
 options = ClaudeAgentOptions(
     mcp_servers={"server": server},
     allowed_tools=["mcp__server__get_customer", "mcp__server__process_refund", "mcp__server__escalate_to_human"],
+    model="claude-haiku-4-5",
     system_prompt=system_prompt,
     hooks={
         "PreToolUse": [
             HookMatcher(
-                matcher="get_customer|process_refund|escalate_to_human",
+                matcher="mcp__server__get_customer|mcp__server__process_refund|mcp__server__escalate_to_human",
                 hooks=[prerequisite_gate],
             ),
             HookMatcher(
-                matcher="process_refund",
+                matcher="mcp__server__process_refund",
                 hooks=[exceed_limit],
             )
         ]
